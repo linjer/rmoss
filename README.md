@@ -15,6 +15,7 @@ C, C++, Java, C#, Python, Visual Basic, Javascript, FORTRAN, ML, Haskell, Lisp, 
 
 ###Usage
 Usage involves the following steps:
+
 * Install gem
 * Create a MossRuby object using your MOSS user id.
 * Configure MOSS options on your MossRuby object
