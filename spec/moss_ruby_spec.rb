@@ -143,7 +143,106 @@ describe MossRuby do
 
 			@moss.check file_hash
 		end
-
 	end
 
+	describe "#extract_results" do
+		before :each do
+    		@uri = "http://moss.stanford.edu/results/706783168"
+    		response = { 
+				top: '<HTML>
+<HEAD>
+<TITLE>Top</TITLE>
+</HEAD><BODY BGCOLOR=white><CENTER><TABLE BORDER="1" CELLSPACING="0" BGCOLOR="#d0d0d0"><TR><TH>../test/test2.c (75%)<TH><IMG SRC="http://moss.stanford.edu/bitmaps/tm_0_75.gif" BORDER="0" ALIGN=left><TH>../test/test3.c (85%)<TH><IMG SRC="http://moss.stanford.edu/bitmaps/tm_0_75.gif" BORDER="0" ALIGN=left><TH>
+<TR><TD><A HREF="http://moss.stanford.edu/results/706783168/match0-0.html#0" NAME="0" TARGET="0">3-5</A>
+<TD><A HREF="http://moss.stanford.edu/results/706783168/match0-0.html#0" NAME="0" TARGET="0"><IMG SRC="http://moss.stanford.edu/bitmaps/tm_0_75.gif" ALT="link" BORDER="0" ALIGN=left></A>
+<TD><A HREF="http://moss.stanford.edu/results/706783168/match0-1.html#0" NAME="0" TARGET="1">3-5</A>
+<TD><A HREF="http://moss.stanford.edu/results/706783168/match0-1.html#0" NAME="0" TARGET="1"><IMG SRC="http://moss.stanford.edu/bitmaps/tm_0_75.gif" ALT="link" BORDER="0" ALIGN=left></A>
+</TABLE></CENTER></BODY></BODY></HTML>',
+				m00: '<HTML>
+<HEAD>
+<TITLE>../test/test2.c</TITLE>
+</HEAD>
+<BODY BGCOLOR=white>
+<HR>
+../test/test2.c<p><PRE>
+#include &lt;stdio.h&gt;
+
+<A NAME="0"></A><FONT color = #FF0000><A HREF="match0-1.html#0" TARGET="1"><IMG SRC="http://moss.stanford.edu/bitmaps/tm_0_75.gif" ALT="other" BORDER="0" ALIGN=left></A>
+
+int main()
+{
+	printf("Hello Andrew");
+</FONT>}</PRE>
+</PRE>
+</BODY>
+</HTML>
+
+',
+				m01: '<HTML>
+<HEAD>
+<TITLE>../test/test3.c</TITLE>
+</HEAD>
+<BODY BGCOLOR=white>
+<HR>
+../test/test3.c<p><PRE>
+#include &lt;stdio.h&gt;
+
+<A NAME="0"></A><FONT color = #FF0000><A HREF="match0-0.html#0" TARGET="0"><IMG SRC="http://moss.stanford.edu/bitmaps/tm_0_75.gif" ALT="other" BORDER="0" ALIGN=left></A>
+
+int main()
+{
+	printf("Hello Andrew");
+</FONT>}</PRE>
+</PRE>
+</BODY>
+</HTML>
+
+'
+			}
+			stub_request(:get, "moss.stanford.edu/results/706783168/match0-top.html").to_return(:body => response[:top], :status => 200)
+			stub_request(:get, "moss.stanford.edu/results/706783168/match0-0.html").to_return(:body => response[:m00], :status => 200)
+			stub_request(:get, "moss.stanford.edu/results/706783168/match0-1.html").to_return(:body => response[:m01], :status => 200)
+
+			stub_request(:get, "moss.stanford.edu/results/706783168/match1-top.html").to_return(:status => 404)
+		end
+
+		it "it makes the required calls to the server to get data on matches" do
+			@moss.extract_results @uri
+		end
+
+		it "identifies filenames in its response" do
+			result = @moss.extract_results @uri
+
+			expect(result[0][0][:filename]).to eql "../test/test2.c"
+			expect(result[0][1][:filename]).to eql "../test/test3.c"
+		end
+
+		it "identifies percentages in its response" do
+			result = @moss.extract_results @uri
+
+			expect(result[0][0][:pct]).to eql 75
+			expect(result[0][1][:pct]).to eql 85
+		end
+
+		it "contains the HTML of the match in its response" do
+			result = @moss.extract_results @uri
+
+			expect(result[0][0][:html]).to eql '<PRE>#include &lt;stdio.h&gt;
+
+<FONT color = #FF0000>
+
+int main()
+{
+	printf("Hello Andrew");
+</FONT>}</PRE>'
+			expect(result[0][1][:html]).to eql '<PRE>#include &lt;stdio.h&gt;
+
+<FONT color = #FF0000>
+
+int main()
+{
+	printf("Hello Andrew");
+</FONT>}</PRE>'
+		end
+	end
 end

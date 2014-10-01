@@ -146,25 +146,43 @@ class MossRuby
 				match_file[0] = open("#{uri}/match#{match}-0.html").read
 				match_file[1] = open("#{uri}/match#{match}-1.html").read
 
+				# puts match_top
+				# puts "---FILE0\n\n"
+				# puts match_file[0]
+				# puts "---FILE1\n\n"
+				# puts match_file[1]
+
 				data[0] = read_data match_file[0]
 				data[1] = read_data match_file[1]
 				top = read_pcts match_top
 
-				result << { 
-					files: 	[ data[0][:filename], data[1][:filename] ], 
-					html:  	[ "<PRE>#{data[0][:html]}</PRE>", "<PRE>#{data[0][:html]}</PRE>" ],
-					pct:  	[ top[:pct0], top[:pct1] ]
-				}
+				result << [ 
+					{
+						filename: 	data[0][:filename], 
+						html:  		strip_a("<PRE>#{data[0][:html]}</PRE>"),
+						pct:  		Integer(top[:pct0])
+					},
+					{
+						filename: 	data[1][:filename], 
+						html:  		strip_a("<PRE>#{data[1][:html]}</PRE>"),
+						pct:  		Integer(top[:pct1])						
+					}
+				]
 
 				match += 1
 			end
 		rescue OpenURI::HTTPError
+			#end when there are no more matches -- indicated by 404 when accessing matches-n-top.html
 		end
 
 		result
 	end
 
 	private
+
+	def strip_a(html)
+		html.gsub(/<A.*?>.*?<\/A>/, '')
+	end
 
 	def read_data(match_file)
 		regex = /<HR>\s+(?<filename>\S+)<p><PRE>\n(?<html>.*)<\/PRE>\n<\/PRE>\n<\/BODY>\n<\/HTML>/xm
