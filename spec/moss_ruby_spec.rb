@@ -48,9 +48,10 @@ describe MossRuby do
 			result
 		end
 
-		it "opens a TCP" do
+		it "opens a TCP connection to the server and asks to confirm language and get results" do
 			expect(@server).to receive(:write).at_least(:once)
 			expect(@server).to receive(:gets) { "yes" }
+			expect(@server).to receive(:gets) { "http://moss.stanford.edu/results/706783168\n" }
 			expect(@server).to receive(:close)
 			
 			@moss.check file_hash
@@ -73,6 +74,7 @@ describe MossRuby do
 			expect(@server).to receive(:gets) { "yes" }
 			expect(@server).to receive(:write).with("language c\n")
 			expect(@server).to receive(:write).with("query 0 \n")
+			expect(@server).to receive(:gets) { "http://moss.stanford.edu/results/706783168\n" }
 			expect(@server).to receive(:write).with("end\n")
 			expect(@server).to receive(:close)
 
@@ -98,6 +100,7 @@ describe MossRuby do
 			expect(@server).to receive(:gets) { "yes" }
 			expect(@server).to receive(:write).with("language python\n")
 			expect(@server).to receive(:write).with("query 0 Hello World\n")
+			expect(@server).to receive(:gets) { "http://moss.stanford.edu/results/706783168\n" }
 			expect(@server).to receive(:write).with("end\n")
 			expect(@server).to receive(:close)
 
@@ -109,8 +112,13 @@ describe MossRuby do
 		RSpec::Matchers.define :a_file_like do |filename, lang|
   			match { |actual| /file [0-9]+ c [0-9]+ .*#{filename}\n/.match(actual) }
 		end
+
 		RSpec::Matchers.define :text_starting_with do |line|
   			match { |actual| actual.start_with? line }
+		end
+
+		RSpec::Matchers.define :text_matching_pattern do |pattern|
+			match { |actual| (actual =~ pattern) == 0 }
 		end
 
 		it "sends files it is provided" do
@@ -122,13 +130,16 @@ describe MossRuby do
 			expect(@server).to receive(:gets) { "yes" }
 			expect(@server).to receive(:write).with("language c\n")
 			expect(@server).to receive(:write).with("query 0 \n")
-			expect(@server).to receive(:write).with("end\n")
-			expect(@server).to receive(:close)
+			expect(@server).to receive(:gets) { "http://moss.stanford.edu/results/706783168\n" }
 
 			expect(@server).to receive(:write).with(a_file_like("hello.c", "c"))
-			expect(@server).to receive(:write).with(text_starting_with("#include <stdio.h>\n\nint main()")).twice
+			expect(@server).to receive(:write).with(text_starting_with("#include <stdio.h>\n\nint main()")).at_least(:once)
 
 			expect(@server).to receive(:write).with(a_file_like("hello2.c", "c"))
+			allow(@server).to receive(:write).with(text_matching_pattern( /file\s+\d\s+c\s+\d+\s+.*\/moss-ruby\/spec\/test_files\/.*\.c\n/))
+
+			expect(@server).to receive(:write).with("end\n")
+			expect(@server).to receive(:close)
 
 			@moss.check file_hash
 		end
