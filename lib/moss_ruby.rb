@@ -128,7 +128,7 @@ class MossRuby
 			result = moss_server.gets
 
 			moss_server.write "end\n"
-			return result
+			return result.strip()
 		ensure
 			moss_server.close
 		end
