@@ -50,7 +50,7 @@ moss.options[:language] = "c"
 to_check = MossRuby.empty_file_hash
 MossRuby.add_file(to_check, "The/Files/Path/MyFile.c")
 MossRuby.add_file(to_check, "Other/Files/Path/*.c")
-MossRuby.add_file(to_check, "Other/Files/Path/*.h")
+MossRuby.add_file(to_check, "Many/Files/Paths/**/*.h")
 
 # Get server to process files
 url = moss.check to_check
